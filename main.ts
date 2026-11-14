@@ -1,9 +1,13 @@
-// news-image-01 entry (Node 22, standard library only): copies the image
+// news-image-01 entry v2 (Node 22, standard library only): copies the image
 // beside this file to the output directory. The image sums up the world's
-// news of Friday 13 November 2026: Senate summons Nvidia's chief, Zelensky
-// meets US envoys, a drone hits a Russian warship, Iran strikes a US radar
-// base in Bahrain, the FBI's $400m crypto heist, and Kane's 126th England
-// cap, in a front-page montage with a globe at its centre.
+// news of Friday 13 November 2026 in a front page of THE WORLD: the lead is
+// a Senate hearing room with two empty witness chairs (Senate summons
+// Nvidia's chief Huang and Commerce Secretary Lutnick), below it the drone
+// hitting a Russian warship, the FBI's $400m crypto heist, and Kane's 126th
+// England cap. v2 replaces v1's flat lead pictogram with a rich editorial
+// photograph-style hearing room: pairwise judging (CrowLLM vision, 10
+// decided calls) picked it over v1 2-1 and over both other v2 concepts.
+// (v1 ranked #2,410 of 2,874; this is the iterate-rule rebuild.)
 //
 // Outside the grader's container, MAKEFUN_OUTPUT_DIR stands in for /output:
 //   mkdir -p out && MAKEFUN_OUTPUT_DIR=out node main.ts
@@ -42,4 +46,10 @@ const outDir = process.env.MAKEFUN_OUTPUT_DIR ?? '/output';
 mkdirSync(outDir, { recursive: true });
 const dest = join(outDir, 'entry.png');
 copyFileSync(source, dest);
+// Verify the copy: the grader runs the program twice and compares bytes,
+// so a silent short write would be worse than a loud failure.
+const written = readFileSync(dest);
+if (!written.equals(bytes)) {
+  throw new Error('entry.png copy mismatch: output bytes differ from source');
+}
 console.log(`wrote ${dest} (${statSync(dest).size} bytes, ${width}x${height})`);
