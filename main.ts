@@ -35,7 +35,11 @@ if (!bytes.subarray(0, 8).equals(PNG_SIGNATURE)) {
 if (bytes.length > 1048576) {
   throw new Error(`entry.png is ${bytes.length} bytes, over the 1 MiB limit`);
 }
-// IHDR chunk: width and height are big-endian uint32 at offsets 16 and 20.
+// IHDR chunk: the first chunk type must be 'IHDR' (bytes 12-15); only
+// then are width and height meaningful as big-endian uint32 at offsets 16 and 20.
+if (!bytes.subarray(12, 16).equals(Buffer.from('IHDR'))) {
+  throw new Error('entry.png is not a valid PNG (first chunk is not IHDR)');
+}
 const width = bytes.readUInt32BE(16);
 const height = bytes.readUInt32BE(20);
 if (width > 1024 || height > 1024) {
@@ -47,8 +51,15 @@ mkdirSync(outDir, { recursive: true });
 const dest = join(outDir, 'entry.png');
 copyFileSync(source, dest);
 // Verify the copy: the grader runs the program twice and compares bytes,
-// so a silent short write would be worse than a loud failure.
+// so a silent short write would be worse than a loud failure. Check size
+// and signature first so a truncated write fails with a specific error.
 const written = readFileSync(dest);
+if (written.length !== bytes.length) {
+  throw new Error(`entry.png copy truncated: wrote ${written.length} of ${bytes.length} bytes`);
+}
+if (!written.subarray(0, 8).equals(PNG_SIGNATURE)) {
+  throw new Error('entry.png copy mismatch: output does not start with the PNG signature');
+}
 if (!written.equals(bytes)) {
   throw new Error('entry.png copy mismatch: output bytes differ from source');
 }
